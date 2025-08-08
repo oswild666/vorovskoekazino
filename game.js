@@ -103,7 +103,7 @@ class Ball {
         this.radius = 20; // as per spec
         this.state = 'held';
         this.velocity = { x: 0, y: 0 };
-        this.color = '#ff0'; // Yellow
+        this.color = '#ffff00'; // Yellow
         this.reset();
     }
 
