@@ -82,8 +82,9 @@ class Enemy {
 
         this.mesh.traverse(node => {
             if (node.isMesh) {
-                node.material = node.material.clone();
-                node.material.color = this.color;
+                node.material = new THREE.MeshToonMaterial({
+                    color: this.color
+                });
             }
         });
 
@@ -103,6 +104,14 @@ class Ball {
 
         this.mesh = this.game.assets.ball.clone(true);
 
+        this.mesh.traverse(node => {
+            if(node.isMesh) {
+                node.material = new THREE.MeshToonMaterial({
+                    color: this.color
+                });
+            }
+        });
+
         const box = new THREE.Box3().setFromObject(this.mesh);
         const size = box.getSize(new THREE.Vector3());
         const scale = (this.radius * 2) / size.y;
@@ -117,7 +126,9 @@ class Ball {
         this.velocity.set(0, 0, 0);
         this.color.set('#ffff00');
         this.mesh.traverse(node => {
-            if(node.isMesh) node.material.color.set(this.color);
+            if(node.isMesh && node.material.color) {
+                node.material.color.set(this.color);
+            }
         });
         this.updateHeldPosition();
     }
@@ -195,7 +206,9 @@ class Ball {
                 this.game.scene.remove(enemy.mesh);
                 this.color.set(enemy.color);
                 this.mesh.traverse(node => {
-                    if(node.isMesh) node.material.color.set(this.color);
+                    if(node.isMesh && node.material.color) {
+                       node.material.color.set(this.color);
+                    }
                 });
                 this.game.addScore(10);
                 this.game.effects.push(new DeathEffect(this.game, enemy.position, enemy.color));
@@ -267,11 +280,11 @@ class Game {
     async init() {
         this.renderer.setSize(window.innerWidth, window.innerHeight);
         document.body.appendChild(this.renderer.domElement);
-        this.scene.background = new THREE.Color(0x1a023a);
+        this.scene.background = new THREE.Color(0x000000);
 
-        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
         this.scene.add(ambientLight);
-        const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 1.0);
         directionalLight.position.set(5, 10, 7.5);
         this.scene.add(directionalLight);
 
@@ -299,7 +312,7 @@ class Game {
                 undefined,
                 () => {
                     const fallbackGeom = new THREE.SphereGeometry(0.5, 32, 32);
-                    const fallbackMat = new THREE.MeshStandardMaterial({ color: 0xffff00 });
+                    const fallbackMat = new THREE.MeshToonMaterial({ color: 0xffff00 });
                     resolve(new THREE.Mesh(fallbackGeom, fallbackMat));
                 }
             );
@@ -311,7 +324,7 @@ class Game {
                 undefined,
                 () => {
                     const fallbackGeom = new THREE.BoxGeometry(this.cellSize.width * 0.9, this.cellSize.height * 0.9, 1);
-                    const fallbackMat = new THREE.MeshStandardMaterial({ color: 0xff00ff });
+                    const fallbackMat = new THREE.MeshToonMaterial({ color: 0xff00ff });
                     resolve(new THREE.Mesh(fallbackGeom, fallbackMat));
                 }
             );
