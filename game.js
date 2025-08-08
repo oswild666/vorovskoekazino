@@ -110,6 +110,7 @@ class Ball {
     reset() {
         this.state = 'held';
         this.velocity = { x: 0, y: 0 };
+        this.color = '#ffff00'; // Reset color to yellow
         this.updateHeldPosition();
     }
 
@@ -415,6 +416,12 @@ class Game {
     }
 
     hexToRgb(hex) {
+        // Expand shorthand form (e.g. "03F") to full form (e.g. "0033FF")
+        const shorthandRegex = /^#?([a-f\d])([a-f\d])([a-f\d])$/i;
+        hex = hex.replace(shorthandRegex, (m, r, g, b) => {
+            return r + r + g + g + b + b;
+        });
+
         const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
         return result ? {
             r: parseInt(result[1], 16),
