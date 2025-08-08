@@ -80,10 +80,11 @@ class Enemy {
 
         this.mesh = this.game.assets.enemy.clone(true);
 
-        this.mesh.traverse(node => {
-            if (node.isMesh) {
-                node.material = new THREE.MeshToonMaterial({
-                    color: this.color
+        // This is the robust way to ensure each enemy has a unique colored material
+        this.mesh.traverse(child => {
+            if (child.isMesh) {
+                child.material = new THREE.MeshToonMaterial({
+                    color: this.color,
                 });
             }
         });
