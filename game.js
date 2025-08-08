@@ -19,13 +19,13 @@ class Player {
 
         this.mesh = new THREE.Group();
         const bodyGeom = new THREE.BoxGeometry(this.width, this.height, 1);
-        const bodyMat = new THREE.MeshStandardMaterial({ color: 0x333333 });
+        const bodyMat = new THREE.MeshBasicMaterial({ color: 0x444444 });
         const bodyMesh = new THREE.Mesh(bodyGeom, bodyMat);
         this.mesh.add(bodyMesh);
 
         const turntableRadius = this.height * 0.4;
         const turntableGeom = new THREE.CylinderGeometry(turntableRadius, turntableRadius, 0.2, 32);
-        const turntableMat = new THREE.MeshStandardMaterial({ color: 0x111111 });
+        const turntableMat = new THREE.MeshBasicMaterial({ color: 0x222222 });
 
         this.leftTurntable = new THREE.Mesh(turntableGeom, turntableMat);
         this.leftTurntable.position.set(-this.width * 0.25, 0, 0.5);
@@ -83,7 +83,7 @@ class Enemy {
         // This is the robust way to ensure each enemy has a unique colored material
         this.mesh.traverse(child => {
             if (child.isMesh) {
-                child.material = new THREE.MeshToonMaterial({
+                child.material = new THREE.MeshBasicMaterial({
                     color: this.color,
                 });
             }
@@ -107,7 +107,7 @@ class Ball {
 
         this.mesh.traverse(node => {
             if(node.isMesh) {
-                node.material = new THREE.MeshToonMaterial({
+                node.material = new THREE.MeshBasicMaterial({
                     color: this.color
                 });
             }
@@ -283,11 +283,9 @@ class Game {
         document.body.appendChild(this.renderer.domElement);
         this.scene.background = new THREE.Color(0x000000);
 
-        const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
+        // No lighting needed for MeshBasicMaterial
+        const ambientLight = new THREE.AmbientLight(0xffffff, 1.0);
         this.scene.add(ambientLight);
-        const directionalLight = new THREE.DirectionalLight(0xffffff, 1.0);
-        directionalLight.position.set(5, 10, 7.5);
-        this.scene.add(directionalLight);
 
         this.createBoundaries();
         this.camera.position.set(0, this.grid.rows / 2, 22);
@@ -313,7 +311,7 @@ class Game {
                 undefined,
                 () => {
                     const fallbackGeom = new THREE.SphereGeometry(0.5, 32, 32);
-                    const fallbackMat = new THREE.MeshToonMaterial({ color: 0xffff00 });
+                    const fallbackMat = new THREE.MeshBasicMaterial({ color: 0xffff00 });
                     resolve(new THREE.Mesh(fallbackGeom, fallbackMat));
                 }
             );
@@ -325,7 +323,7 @@ class Game {
                 undefined,
                 () => {
                     const fallbackGeom = new THREE.BoxGeometry(this.cellSize.width * 0.9, this.cellSize.height * 0.9, 1);
-                    const fallbackMat = new THREE.MeshToonMaterial({ color: 0xff00ff });
+                    const fallbackMat = new THREE.MeshBasicMaterial({ color: 0xff00ff });
                     resolve(new THREE.Mesh(fallbackGeom, fallbackMat));
                 }
             );
