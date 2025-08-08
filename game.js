@@ -9,7 +9,8 @@ class Player {
         this.pixelPos = this.game.gridToPixel(initialCol, initialRow);
         this.width = this.size.width * this.game.cellSize.width;
         this.turntableRotation = 0;
-        this.lastX = this.pixelPos.x;
+        this.speed = 500; // pixels per second
+        this.velocity = 0;
     }
 
     draw(ctx) {
@@ -50,12 +51,25 @@ class Player {
         ctx.restore();
     }
 
-    move(x) {
-        const halfWidth = this.width / 2;
+    update(dt) {
         const prevX = this.pixelPos.x;
-        this.pixelPos.x = Math.max(0, Math.min(this.game.canvas.width - this.width, x - halfWidth));
+        this.pixelPos.x += this.velocity * dt;
+        this.pixelPos.x = Math.max(0, Math.min(this.game.canvas.width - this.width, this.pixelPos.x));
+
         const deltaX = this.pixelPos.x - prevX;
         this.turntableRotation += deltaX * 0.05;
+    }
+
+    moveLeft() {
+        this.velocity = -this.speed;
+    }
+
+    moveRight() {
+        this.velocity = this.speed;
+    }
+
+    stop() {
+        this.velocity = 0;
     }
 }
 
@@ -225,6 +239,7 @@ class Game {
         this.simplex = new SimplexNoise();
         this.lastTime = 0;
         this.audioContext = null;
+        this.keys = {};
 
         this.score = 0;
         this.roundTime = 40;
@@ -265,11 +280,14 @@ class Game {
     }
 
     setupControls() {
-        this.canvas.addEventListener('mousemove', e => this.handleMove(e.clientX));
-        this.canvas.addEventListener('touchmove', e => {
-            e.preventDefault();
-            this.handleMove(e.touches[0].clientX);
-        }, { passive: false });
+        window.addEventListener('keydown', e => this.handleKeyDown(e));
+        window.addEventListener('keyup', e => this.handleKeyUp(e));
+
+        this.canvas.addEventListener('mousedown', e => {
+            if (e.button === 0) { // Left mouse button
+                this.launchBall();
+            }
+        });
 
         const fireButton = document.getElementById('fire-button');
         fireButton.addEventListener('click', () => this.launchBall());
@@ -277,6 +295,21 @@ class Game {
             e.preventDefault();
             this.launchBall();
         });
+    }
+
+    handleKeyDown(e) {
+        this.keys[e.key] = true;
+        if (e.key === 'ArrowLeft') this.player.moveLeft();
+        if (e.key === 'ArrowRight') this.player.moveRight();
+        if (e.key === ' ') { // Space bar
+            this.launchBall();
+        }
+    }
+
+    handleKeyUp(e) {
+        this.keys[e.key] = false;
+        if (e.key === 'ArrowLeft' && !this.keys['ArrowRight']) this.player.stop();
+        if (e.key === 'ArrowRight' && !this.keys['ArrowLeft']) this.player.stop();
     }
 
     initAudio() {
@@ -310,11 +343,6 @@ class Game {
         }
     }
 
-    handleMove(x) {
-        if (this.player) {
-            this.player.move(x);
-        }
-    }
 
     init() {
         this.player = new Player(this);
@@ -358,6 +386,9 @@ class Game {
     }
 
     update(dt) {
+        if (this.player) {
+            this.player.update(dt);
+        }
         if (this.ball) {
             this.ball.update(dt);
             if (this.ball.state === 'moving') {
