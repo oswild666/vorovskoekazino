@@ -1,8 +1,3 @@
-/* Set a smaller base font size for the entire app */
-Screen {
-    font-size: 85%;
-}
-
 /* General layout and container styling */
 #app-grid {
     layout: grid;
