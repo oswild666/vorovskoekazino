@@ -9,6 +9,9 @@ from textual.widgets import Header, Footer, Static, Button, Checkbox, Input, Ric
 from textual.reactive import reactive
 from textual.coordinate import Coordinate
 
+from midi_handler import MidiHandler
+from sequencer import Sequencer
+
 class SequencerTUI(App):
     """A Textual user interface for the MIDI sequencer."""
 
