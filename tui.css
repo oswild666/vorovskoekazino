@@ -10,7 +10,7 @@
 
 /* --- Windows 3.1 Style Buttons --- */
 Button, .button {
-    border: outset $primary-lighten-2 2px;
+    border: panel $primary-lighten-2;
     background: $panel;
     color: $text;
     min-width: 8;
