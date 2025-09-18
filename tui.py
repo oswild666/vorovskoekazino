@@ -6,12 +6,59 @@ from functools import partial
 
 from textual.app import App, ComposeResult
 from textual.containers import Container, Vertical, Horizontal
-from textual.widgets import Header, Footer, Static, Button, Checkbox, Input, RichLog
+from textual.widgets import Header, Footer, Static, Button, Checkbox, Input, RichLog, RadioSet, RadioButton
 from textual.reactive import reactive
 from textual.coordinate import Coordinate
 from textual.color import Color
 
 # --- Custom Widget for Background Effect ---
+
+class PatternEditor(Static):
+    """A widget to display and edit the sequencer pattern."""
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.grid_buttons = []
+
+    def on_mount(self) -> None:
+        self.rebuild_grid()
+
+    def rebuild_grid(self) -> None:
+        """Clears and rebuilds the grid of step buttons."""
+        # Clear existing buttons
+        for button in self.grid_buttons:
+            button.remove()
+        self.grid_buttons.clear()
+
+        pattern = self.app.sequencer.get_current_pattern()
+        if not pattern:
+            return
+
+        # Adjust grid size based on pattern
+        self.styles.grid_size_rows = len(pattern.tracks)
+        self.styles.grid_size_columns = max(t.length for t in pattern.tracks) if pattern.tracks else 16
+
+        # Create new buttons
+        for track_index, track in enumerate(pattern.tracks):
+            for step_index in range(track.length):
+                button = Button("", id=f"step_{track_index}_{step_index}", classes="step-button")
+                self.mount(button)
+                self.grid_buttons.append(button)
+
+    def update_display(self, current_step: int) -> None:
+        """Updates the visual state of the step buttons."""
+        pattern = self.app.sequencer.get_current_pattern()
+        if not pattern:
+            return
+
+        for track_index, track in enumerate(pattern.tracks):
+            for step_index in range(track.length):
+                button = self.query_one(f"#step_{track_index}_{step_index}")
+                button.remove_class("active", "playhead")
+                if track.steps[step_index]:
+                    button.add_class("active")
+                if step_index == current_step % track.length:
+                    button.add_class("playhead")
 
 class Starfield(Static):
     """A widget that displays a starfield background with a color cycle."""
@@ -33,7 +80,7 @@ class Starfield(Static):
         )
         self.mount(star)
 
-        star.animate(
+        star.styles.animate(
             "opacity",
             value=0.0,
             duration=random.uniform(2.0, 5.0),
@@ -43,7 +90,7 @@ class Starfield(Static):
     def animate_background_color(self, to_dark: bool = True):
         """Animates the background color in a loop."""
         target_color = Color.parse("#0d1b2a") if to_dark else Color.parse("#1b263b")
-        self.animate(
+        self.styles.animate(
             "background",
             value=target_color,
             duration=15.0,
@@ -59,7 +106,171 @@ class SequencerTUI(App):
     """A Textual user interface for the MIDI sequencer."""
 
     TITLE = "Polyrhythmic MIDI Sequencer"
-    CSS_PATH = "tui.css"
+
+    CSS = """
+    /* --- Top Bar for Transport & Restore Controls --- */
+    #top-bar {
+        layout: horizontal;
+        align: left middle;
+        height: 3;
+        padding: 0 1;
+        background: $panel;
+        border-bottom: solid $primary;
+    }
+
+    /* --- Windows 3.1 Style Buttons --- */
+    Button, .button {
+        border: panel $primary-lighten-2;
+        background: $panel;
+        color: $text;
+        min-width: 8;
+        height: 1;
+        margin: 0 1;
+    }
+
+    Button:hover, .button:hover {
+        background: $primary-darken-1;
+    }
+
+    /* --- Minimize / Restore Buttons --- */
+    .restore-button:disabled {
+        display: none;
+    }
+
+    .minimize-button {
+        layer: minimize;
+        align: right top;
+        width: 3;
+        height: 1;
+        min-width: 3;
+        border: none;
+        background: $error;
+    }
+
+    /* --- Dynamic Highlighting for Transport Buttons --- */
+    Button.highlight-midi {
+        background: $secondary;
+        color: $text;
+    }
+
+    Button.highlight-user {
+        background: $success;
+        color: $text;
+    }
+
+    /* --- Main App Grid --- */
+    #app-grid {
+        layout: grid;
+        grid-size: 3 1;
+        grid-gutter: 1;
+        padding: 0 1;
+        height: 1fr;
+        /* Define layers for z-axis positioning */
+        layers: base panels;
+    }
+
+    /* --- Background Starfield --- */
+    Starfield {
+        width: 100%;
+        height: 100%;
+        layer: base; /* Place it on the bottom layer */
+    }
+
+    /* --- Main Content Panes --- */
+    #left-pane, #right-pane {
+        border: heavy $primary;
+        padding: 0 1;
+        layer: panels; /* Place them on the top layer */
+        layers: content minimize;
+    }
+
+    #center-pane {
+        width: 3fr;
+        border: heavy $primary;
+        padding: 0 1;
+        layer: panels;
+    }
+
+    #right-pane {
+        width: 2fr;
+    }
+
+    PatternEditor {
+        layout: grid;
+        grid-size: 4 16; /* 4 tracks, 16 steps */
+        grid-gutter: 1;
+        width: 100%;
+        height: 100%;
+    }
+
+    /* --- Common Styles --- */
+    .title {
+        background: $primary;
+        color: $text;
+        width: 100%;
+        padding: 0;
+        text-align: center;
+        text-style: bold;
+        margin-bottom: 1;
+    }
+
+    .label {
+        text-style: bold;
+        margin-top: 1;
+    }
+
+    /* --- Specific Widget Styling --- */
+    .port-list Button {
+        width: 100%;
+        margin-bottom: 1;
+    }
+
+    Checkbox {
+        margin-top: 1;
+    }
+
+    Input {
+        margin-top: 1;
+    }
+
+    /* Status display styling */
+    #bpm-display, #state-display, #sync-display {
+        border: tall $background-lighten-2;
+        background: $background-darken-2;
+        padding: 0 1;
+        margin-bottom: 1;
+        height: 1;
+        text-style: bold;
+    }
+
+    #state-display.stopped {
+        color: $error;
+    }
+
+    #state-display.playing {
+        color: $success;
+    }
+
+    #log {
+        border: panel $primary-lighten-2;
+        height: 1fr;
+    }
+
+    .step-button {
+        width: 100%;
+        height: 100%;
+        background: $panel-lighten-2;
+        border: none;
+    }
+
+    .step-button.active {
+        background: $success;
+    }
+
+    .step-button.playhead {
+        border: thick $secondary;
+    }
+    """
 
     status_dict = reactive(dict)
 
@@ -96,9 +307,19 @@ class SequencerTUI(App):
                 yield Button("﹣", id="minimize-controls", classes="minimize-button")
                 yield Static("MIDI Port:", classes="label")
                 yield Vertical(id="midi-port-select", classes="port-list")
-                yield Checkbox("Use Internal BPM", id="internal-bpm-checkbox")
+                yield Checkbox("Sync to MIDI Start/Stop", id="sync-transport-checkbox", value=True)
+                yield Static("BPM Source:", classes="label")
+                with RadioSet(id="bpm-source-radioset"):
+                    yield RadioButton("External MIDI Clock", id="bpm-external", value=True)
+                    yield RadioButton("Internal", id="bpm-internal")
                 yield Static("Internal BPM:", classes="label", id="internal-bpm-label")
                 yield Input(value=str(self.sequencer.internal_bpm), id="bpm-input")
+
+                yield Static("\n--- Patterns ---", classes="label")
+                yield Static("Pattern switching coming soon...", id="pattern-switcher-placeholder")
+
+            with Vertical(id="center-pane"):
+                yield PatternEditor()
 
             with Vertical(id="right-pane"):
                 yield Static("LIVE STATUS", classes="title")
@@ -130,7 +351,9 @@ class SequencerTUI(App):
         self.set_timer(0.2, lambda: button.remove_class(highlight_class))
 
     def update_ui(self):
+        current_time = time.monotonic()
         with self.sequencer_lock:
+            self.sequencer.tick(current_time)
             status = self.sequencer.get_status_dict()
             trigger_source = status.get("trigger_source")
             if trigger_source != 'INIT':
@@ -152,12 +375,14 @@ class SequencerTUI(App):
         state_widget.remove_class("playing", "stopped")
         state_widget.add_class(status['state'].lower())
 
-        sync_str = f"Sync: {status['sync_mode']}"
+        sync_str = f"BPM Source: {status['bpm_source']}"
         self.query_one("#sync-display").update(sync_str)
 
-        use_internal = self.query_one("#internal-bpm-checkbox").value
-        self.query_one("#internal-bpm-label").display = use_internal
-        self.query_one("#bpm-input").display = use_internal
+        is_internal_bpm = status['bpm_source'] == 'INTERNAL'
+        self.query_one("#internal-bpm-label").display = is_internal_bpm
+        self.query_one("#bpm-input").display = is_internal_bpm
+
+        self.query_one(PatternEditor).update_display(status['current_step'])
 
     def log_message(self, message):
         self.query_one("#log").write(f"[{time.strftime('%H:%M:%S')}] {message}")
@@ -217,14 +442,30 @@ class SequencerTUI(App):
             self.minimize_panel("#right-pane", "#restore-status")
         elif button_id == "restore-controls":
             self.restore_panel("#left-pane", "#restore-controls")
+        elif button_id and button_id.startswith("step_"):
+            parts = button_id.split("_")
+            track_index = int(parts[1])
+            step_index = int(parts[2])
+            with self.sequencer_lock:
+                pattern = self.sequencer.get_current_pattern()
+                if pattern and track_index < len(pattern.tracks):
+                    pattern.tracks[track_index].toggle_step(step_index)
+
         elif button_id == "restore-status":
             self.restore_panel("#right-pane", "#restore-status")
 
     def on_checkbox_changed(self, event: Checkbox.Changed) -> None:
-        if event.checkbox.id == "internal-bpm-checkbox":
+        if event.checkbox.id == "sync-transport-checkbox":
             with self.sequencer_lock:
-                self.sequencer.use_internal_bpm = event.value
-            self.log_message(f"Use Internal BPM set to {event.value}")
+                self.sequencer.sync_transport = event.value
+            self.log_message(f"Sync to MIDI Start/Stop set to {event.value}")
+
+    def on_radio_set_changed(self, event: RadioSet.Changed) -> None:
+        if event.radio_set.id == "bpm-source-radioset":
+            new_source = "INTERNAL" if event.pressed.id == "bpm-internal" else "EXTERNAL"
+            with self.sequencer_lock:
+                self.sequencer.bpm_source = new_source
+            self.log_message(f"BPM Source set to {new_source}")
 
     def on_input_changed(self, event: Input.Changed) -> None:
         if event.input.id == "bpm-input":
@@ -233,6 +474,7 @@ class SequencerTUI(App):
                 if bpm > 0:
                     with self.sequencer_lock:
                         self.sequencer.internal_bpm = bpm
+                    self.log_message(f"Internal BPM set to {bpm}")
             except ValueError:
                 pass
 

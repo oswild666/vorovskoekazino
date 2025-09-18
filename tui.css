@@ -72,6 +72,7 @@ Starfield {
     border: heavy $primary;
     padding: 0 1;
     layer: panels; /* Place them on the top layer */
+    layers: content minimize;
 }
 
 #right-pane {
