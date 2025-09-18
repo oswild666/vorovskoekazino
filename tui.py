@@ -11,6 +11,9 @@ from textual.reactive import reactive
 from textual.coordinate import Coordinate
 from textual.color import Color
 
+from midi_handler import MidiHandler
+from sequencer import Sequencer
+
 # --- Custom Widget for Background Effect ---
 
 class Starfield(Static):
