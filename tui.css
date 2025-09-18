@@ -22,10 +22,6 @@ Button:hover, .button:hover {
     background: $primary-darken-1;
 }
 
-Button:active, .button:active {
-    border: inset $primary-darken-2 2px;
-}
-
 #restore-controls-button:disabled {
     display: none;
 }
