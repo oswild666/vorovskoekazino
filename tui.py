@@ -6,8 +6,6 @@ from textual.app import App, ComposeResult
 from textual.containers import Container, Vertical, Horizontal
 from textual.widgets import Header, Footer, Static, Button, RadioSet, Input, RichLog
 from textual.reactive import reactive
-# The Worker import is no longer needed
-# from textual.worker import Worker
 
 from midi_handler import MidiHandler
 from sequencer import Sequencer, SYNC_MODES
@@ -105,10 +103,15 @@ class SequencerTUI(App):
             port_selector.display = False
             return
 
-        port_selector.mount_all([Button(port, id=port) for port in ports])
+        # Create buttons with safe IDs, using the port name as the label
+        buttons_to_mount = []
+        for i, port_name in enumerate(ports):
+            button = Button(port_name, id=f"port_select_{i}")
+            buttons_to_mount.append(button)
+        port_selector.mount_all(buttons_to_mount)
+
         self.log_message("Available MIDI ports listed.")
 
-    # The @Worker decorator is removed. This is now a regular method.
     def start_midi_listener(self, port_name: str) -> None:
         """Starts the MIDI listener in a background thread."""
         self.log_message(f"Attempting to open port: [bold cyan]{port_name}[/bold cyan]")
@@ -133,10 +136,11 @@ class SequencerTUI(App):
     # --- Event Handlers ---
     def on_button_pressed(self, event: Button.Pressed) -> None:
         """Handle button press events."""
-        if event.button.id in self.midi_handler.get_available_ports():
-            # A MIDI port button was pressed.
-            # We now call self.run_worker to run the listener in the background.
-            self.run_worker(self.start_midi_listener, str(event.button.id))
+        # Check if a port selection button was pressed by its ID prefix
+        if event.button.id and event.button.id.startswith("port_select_"):
+            # The button's label holds the original, unmodified port name
+            port_name = str(event.button.label)
+            self.run_worker(self.start_midi_listener, port_name)
             self.query_one("#midi-port-select").disabled = True # Disable after selection
         elif event.button.id == "start-button":
             with self.sequencer_lock:
