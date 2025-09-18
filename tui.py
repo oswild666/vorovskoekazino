@@ -167,9 +167,12 @@ class SequencerTUI(App):
                 pass # Ignore non-float values
 
     def on_unmount(self) -> None:
-        """Called when the app is unmounted."""
+        """
+        Called when the app is unmounted.
+        This is the place for final cleanup.
+        """
         self.midi_handler.close_port()
-        self.log_message("App unmounted. MIDI port closed.")
+        # Do not try to log here, as widgets may already be gone.
 
 if __name__ == "__main__":
     app = SequencerTUI()
