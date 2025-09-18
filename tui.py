@@ -6,7 +6,7 @@ from textual.app import App, ComposeResult
 from textual.containers import Container, Vertical, Horizontal
 from textual.widgets import Header, Footer, Static, Button, RadioSet, Input, RichLog
 from textual.reactive import reactive
-from textual.worker import worker
+from textual.worker import Worker
 
 from midi_handler import MidiHandler
 from sequencer import Sequencer, SYNC_MODES
@@ -107,7 +107,7 @@ class SequencerTUI(App):
         port_selector.mount_all([Button(port, id=port) for port in ports])
         self.log_message("Available MIDI ports listed.")
 
-    @worker
+    @Worker
     def start_midi_listener(self, port_name: str) -> None:
         """Starts the MIDI listener in a background thread."""
         self.log_message(f"Attempting to open port: [bold cyan]{port_name}[/bold cyan]")
