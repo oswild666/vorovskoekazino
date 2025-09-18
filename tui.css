@@ -1,0 +1,76 @@
+/* General layout and container styling */
+#app-grid {
+    layout: grid;
+    grid-size: 2 1; /* 2 columns, 1 row */
+    grid-gutter: 1 2;
+    padding: 0 1;
+    height: 100%;
+}
+
+#left-pane {
+    width: 1fr;
+    height: 100%;
+    border: heavy $primary-lighten-2;
+    padding: 1;
+}
+
+#right-pane {
+    width: 2fr; /* Make right pane wider */
+    height: 100%;
+    border: heavy $secondary;
+    padding: 1;
+}
+
+/* Common styles for sections */
+.title {
+    background: $primary;
+    color: $text;
+    width: 100%;
+    padding: 0 1;
+    text-align: center;
+    text-style: bold;
+    margin-bottom: 1;
+}
+
+.label {
+    text-style: bold;
+    margin-top: 1;
+}
+
+/* Specific widget styling */
+RadioSet {
+    margin: 1 0;
+}
+
+Input {
+    margin-bottom: 1;
+}
+
+.buttons {
+    align: center middle;
+    width: 100%;
+}
+
+/* Status display styling */
+#bpm-display, #state-display, #sync-display {
+    border: tall $background-lighten-2;
+    background: $background-darken-2;
+    padding: 1;
+    margin-bottom: 1;
+    height: 3;
+    text-style: bold;
+    color: $success;
+}
+
+#state-display.stopped {
+    color: $error;
+}
+
+#state-display.playing {
+    color: $success;
+}
+
+#log {
+    border: panel $primary-lighten-2;
+    height: 1fr; /* Take remaining vertical space */
+}
