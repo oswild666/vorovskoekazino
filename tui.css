@@ -1,4 +1,4 @@
-/* --- New Top Bar for Transport Controls --- */
+/* --- Top Bar for Transport & Restore Controls --- */
 #top-bar {
     layout: horizontal;
     align: left middle;
@@ -22,18 +22,30 @@ Button:hover, .button:hover {
     background: $primary-darken-1;
 }
 
-#restore-controls-button:disabled {
+/* --- Minimize / Restore Buttons --- */
+.restore-button:disabled {
     display: none;
+}
+
+.minimize-button {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 3;
+    height: 1;
+    min-width: 3;
+    border: none;
+    background: $error;
 }
 
 /* --- Dynamic Highlighting for Transport Buttons --- */
 Button.highlight-midi {
-    background: $secondary; /* A distinct color for MIDI events */
+    background: $secondary;
     color: $text;
 }
 
 Button.highlight-user {
-    background: $success; /* A distinct color for user clicks */
+    background: $success;
     color: $text;
 }
 
@@ -42,13 +54,24 @@ Button.highlight-user {
     layout: grid;
     grid-size: 2 1;
     grid-gutter: 1;
-    padding: 1;
-    height: 1fr; /* Takes remaining space */
+    padding: 0 1;
+    height: 1fr;
+    /* Define layers for z-axis positioning */
+    layers: base panels;
 }
 
+/* --- Background Starfield --- */
+Starfield {
+    width: 100%;
+    height: 100%;
+    layer: base; /* Place it on the bottom layer */
+}
+
+/* --- Main Content Panes --- */
 #left-pane, #right-pane {
     border: heavy $primary;
-    padding: 1;
+    padding: 0 1;
+    layer: panels; /* Place them on the top layer */
 }
 
 #right-pane {
@@ -60,7 +83,7 @@ Button.highlight-user {
     background: $primary;
     color: $text;
     width: 100%;
-    padding: 0 1;
+    padding: 0;
     text-align: center;
     text-style: bold;
     margin-bottom: 1;

@@ -1,6 +1,7 @@
 import sys
 import threading
 import time
+import random
 from functools import partial
 
 from textual.app import App, ComposeResult
@@ -8,9 +9,51 @@ from textual.containers import Container, Vertical, Horizontal
 from textual.widgets import Header, Footer, Static, Button, Checkbox, Input, RichLog
 from textual.reactive import reactive
 from textual.coordinate import Coordinate
+from textual.color import Color
 
-from midi_handler import MidiHandler
-from sequencer import Sequencer
+# --- Custom Widget for Background Effect ---
+
+class Starfield(Static):
+    """A widget that displays a starfield background with a color cycle."""
+
+    def on_mount(self) -> None:
+        """Event handler called when widget is added to the app."""
+        self.spawn_star_timer = self.set_interval(1 / 10, self.add_star, pause=True)
+        # Start the color animation loop
+        self.animate_background_color()
+
+    def add_star(self) -> None:
+        """Adds a single star to the starfield."""
+        star_char = random.choice(["*", ".", "+", "·"])
+        star = Static(star_char)
+        star.styles.color = random.choice(["#888", "#aaa", "#ccc", "#fff"])
+        star.styles.offset = (
+            random.randint(0, self.size.width),
+            random.randint(0, self.size.height),
+        )
+        self.mount(star)
+
+        star.animate(
+            "opacity",
+            value=0.0,
+            duration=random.uniform(2.0, 5.0),
+            on_complete=star.remove,
+        )
+
+    def animate_background_color(self, to_dark: bool = True):
+        """Animates the background color in a loop."""
+        target_color = Color.parse("#0d1b2a") if to_dark else Color.parse("#1b263b")
+        self.animate(
+            "background",
+            value=target_color,
+            duration=15.0,
+            easing="in_out_sine",
+            on_complete=lambda: self.animate_background_color(not to_dark)
+        )
+
+    def start(self):
+        """Starts the star spawning."""
+        self.spawn_star_timer.resume()
 
 class SequencerTUI(App):
     """A Textual user interface for the MIDI sequencer."""
@@ -31,6 +74,7 @@ class SequencerTUI(App):
         self.query_one("#log").write("Please select a MIDI port to begin.")
         self.list_midi_ports()
         self.update_ui_worker = self.set_interval(1 / 15, self.update_ui, pause=True)
+        self.query_one(Starfield).start()
 
     def compose(self) -> ComposeResult:
         """Create and arrange the widgets for the app."""
@@ -38,12 +82,14 @@ class SequencerTUI(App):
         with Horizontal(id="top-bar"):
             yield Button("Play", id="play-button", classes="transport")
             yield Button("Stop", id="stop-button", classes="transport")
-            # This button starts hidden and appears after the panel is minimized
-            yield Button("Controls", id="restore-controls-button", classes="transport", disabled=True)
+            yield Button("Controls", id="restore-controls", classes="restore-button", disabled=True)
+            yield Button("Status", id="restore-status", classes="restore-button", disabled=True)
 
         with Container(id="app-grid"):
+            yield Starfield()
             with Vertical(id="left-pane"):
                 yield Static("CONTROLS", classes="title")
+                yield Button("﹣", id="minimize-controls", classes="minimize-button")
                 yield Static("MIDI Port:", classes="label")
                 yield Vertical(id="midi-port-select", classes="port-list")
                 yield Checkbox("Use Internal BPM", id="internal-bpm-checkbox")
@@ -52,12 +98,28 @@ class SequencerTUI(App):
 
             with Vertical(id="right-pane"):
                 yield Static("LIVE STATUS", classes="title")
+                yield Button("﹣", id="minimize-status", classes="minimize-button")
                 yield Static(id="bpm-display")
                 yield Static(id="state-display")
                 yield Static(id="sync-display")
                 yield RichLog(id="log", wrap=True, highlight=True, markup=True)
 
         yield Footer()
+
+    def minimize_panel(self, panel_selector: str, restore_button_selector: str):
+        panel = self.query_one(panel_selector)
+        def show_restore_button():
+            panel.styles.display = "none"
+            self.query_one(restore_button_selector).disabled = False
+        panel.animate("offset", value=Coordinate(0, -panel.outer_size.height), duration=0.5, easing="in_out_cubic", on_complete=show_restore_button)
+        panel.animate("opacity", value=0.0, duration=0.4)
+
+    def restore_panel(self, panel_selector: str, restore_button_selector: str):
+        self.query_one(restore_button_selector).disabled = True
+        panel = self.query_one(panel_selector)
+        panel.styles.display = "block"
+        panel.animate("offset", value=Coordinate(0, 0), duration=0.5, easing="in_out_cubic")
+        panel.animate("opacity", value=1.0, duration=0.4)
 
     def flash_button(self, button: Button, highlight_class: str):
         button.add_class(highlight_class)
@@ -124,19 +186,17 @@ class SequencerTUI(App):
         if self.midi_handler.open_port(port_name):
             self.log_message(f"[bold green]Successfully opened {port_name}[/bold green]")
             self.update_ui_worker.resume()
+            self.minimize_panel("#left-pane", "#restore-controls")
         else:
             self.log_message(f"[bold red]Failed to open {port_name}[/bold red]")
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
         button_id = event.button.id
+
         if button_id and button_id.startswith("port_select_"):
             port_name = str(event.button.label)
             work_callable = partial(self.start_midi_listener, port_name)
             self.run_worker(work_callable, thread=True, name=f"MIDI Listener ({port_name})")
-
-            # Animate the controls pane away
-            self.query_one("#left-pane").animate("offset", value=Coordinate(0, -50), duration=0.5, easing="in_out_cubic", on_complete=self.show_restore_button)
-            self.query_one("#left-pane").animate("opacity", value=0.0, duration=0.4)
 
         elif button_id == "play-button":
             with self.sequencer_lock:
@@ -146,17 +206,15 @@ class SequencerTUI(App):
             with self.sequencer_lock:
                 self.sequencer.stop(source='USER')
             self.log_message("Manual Stop")
-        elif button_id == "restore-controls-button":
-            self.query_one("#restore-controls-button").disabled = True
-            left_pane = self.query_one("#left-pane")
-            left_pane.styles.display = "block"
-            left_pane.animate("offset", value=Coordinate(0, 0), duration=0.5, easing="in_out_cubic")
-            left_pane.animate("opacity", value=1.0, duration=0.4)
 
-    def show_restore_button(self):
-        """Callback to hide the left pane and show the restore button."""
-        self.query_one("#left-pane").styles.display = "none"
-        self.query_one("#restore-controls-button").disabled = False
+        elif button_id == "minimize-controls":
+            self.minimize_panel("#left-pane", "#restore-controls")
+        elif button_id == "minimize-status":
+            self.minimize_panel("#right-pane", "#restore-status")
+        elif button_id == "restore-controls":
+            self.restore_panel("#left-pane", "#restore-controls")
+        elif button_id == "restore-status":
+            self.restore_panel("#right-pane", "#restore-status")
 
     def on_checkbox_changed(self, event: Checkbox.Changed) -> None:
         if event.checkbox.id == "internal-bpm-checkbox":
