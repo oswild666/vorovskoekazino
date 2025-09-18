@@ -1,8 +1,13 @@
+/* Set a smaller base font size for the entire app */
+Screen {
+    font-size: 85%;
+}
+
 /* General layout and container styling */
 #app-grid {
     layout: grid;
     grid-size: 2 1; /* 2 columns, 1 row */
-    grid-gutter: 1 2;
+    grid-gutter: 1; /* Reduced gutter */
     padding: 0 1;
     height: 100%;
 }
@@ -11,14 +16,14 @@
     width: 1fr;
     height: 100%;
     border: heavy $primary-lighten-2;
-    padding: 1;
+    padding: 0 1; /* Reduced padding */
 }
 
 #right-pane {
     width: 2fr; /* Make right pane wider */
     height: 100%;
     border: heavy $secondary;
-    padding: 1;
+    padding: 0 1; /* Reduced padding */
 }
 
 /* Common styles for sections */
@@ -39,7 +44,7 @@
 
 /* Specific widget styling */
 RadioSet {
-    margin: 1 0;
+    margin: 0; /* Reduced margin */
 }
 
 Input {
@@ -55,9 +60,9 @@ Input {
 #bpm-display, #state-display, #sync-display {
     border: tall $background-lighten-2;
     background: $background-darken-2;
-    padding: 1;
+    padding: 0 1; /* Reduced padding */
     margin-bottom: 1;
-    height: 3;
+    height: 1; /* Reduced height */
     text-style: bold;
     color: $success;
 }
