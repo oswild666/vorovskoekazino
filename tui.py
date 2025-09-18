@@ -11,9 +11,6 @@ from textual.reactive import reactive
 from textual.coordinate import Coordinate
 from textual.color import Color
 
-from midi_handler import MidiHandler
-from sequencer import Sequencer
-
 # --- Custom Widget for Background Effect ---
 
 class Starfield(Static):
@@ -68,6 +65,10 @@ class SequencerTUI(App):
 
     def __init__(self):
         super().__init__()
+        # Import locally to avoid potential import cycle/path issues
+        from sequencer import Sequencer
+        from midi_handler import MidiHandler
+
         self.sequencer = Sequencer()
         self.midi_handler = MidiHandler()
         self.sequencer_lock = threading.Lock()
