@@ -1,6 +1,7 @@
 import sys
 import threading
 import time
+from functools import partial
 
 from textual.app import App, ComposeResult
 from textual.containers import Container, Vertical, Horizontal
@@ -140,7 +141,11 @@ class SequencerTUI(App):
         if event.button.id and event.button.id.startswith("port_select_"):
             # The button's label holds the original, unmodified port name
             port_name = str(event.button.label)
-            self.run_worker(self.start_midi_listener, port_name, thread=True)
+
+            # Use functools.partial to safely bundle the method and its argument
+            work_callable = partial(self.start_midi_listener, port_name)
+            self.run_worker(work_callable, thread=True)
+
             self.query_one("#midi-port-select").disabled = True # Disable after selection
         elif event.button.id == "start-button":
             with self.sequencer_lock:
