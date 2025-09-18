@@ -1,27 +1,65 @@
-/* General layout and container styling */
-#app-grid {
-    layout: grid;
-    grid-size: 2 1; /* 2 columns, 1 row */
-    grid-gutter: 1; /* Reduced gutter */
+/* --- New Top Bar for Transport Controls --- */
+#top-bar {
+    layout: horizontal;
+    align: left middle;
+    height: 3;
     padding: 0 1;
-    height: 100%;
+    background: $panel;
+    border-bottom: solid $primary;
 }
 
-#left-pane {
-    width: 1fr;
-    height: 100%;
-    border: heavy $primary-lighten-2;
-    padding: 0 1; /* Reduced padding */
+/* --- Windows 3.1 Style Buttons --- */
+Button, .button {
+    border: outset $primary-lighten-2 2px;
+    background: $panel;
+    color: $text;
+    min-width: 8;
+    height: 1;
+    margin: 0 1;
+}
+
+Button:hover, .button:hover {
+    background: $primary-darken-1;
+}
+
+Button:active, .button:active {
+    border: inset $primary-darken-2 2px;
+}
+
+#restore-controls-button:disabled {
+    display: none;
+}
+
+/* --- Dynamic Highlighting for Transport Buttons --- */
+Button.highlight-midi {
+    background: $secondary; /* A distinct color for MIDI events */
+    color: $text;
+}
+
+Button.highlight-user {
+    background: $success; /* A distinct color for user clicks */
+    color: $text;
+}
+
+/* --- Main App Grid --- */
+#app-grid {
+    layout: grid;
+    grid-size: 2 1;
+    grid-gutter: 1;
+    padding: 1;
+    height: 1fr; /* Takes remaining space */
+}
+
+#left-pane, #right-pane {
+    border: heavy $primary;
+    padding: 1;
 }
 
 #right-pane {
-    width: 2fr; /* Make right pane wider */
-    height: 100%;
-    border: heavy $secondary;
-    padding: 0 1; /* Reduced padding */
+    width: 2fr;
 }
 
-/* Common styles for sections */
+/* --- Common Styles --- */
 .title {
     background: $primary;
     color: $text;
@@ -37,29 +75,28 @@
     margin-top: 1;
 }
 
-/* Specific widget styling */
-RadioSet {
-    margin: 0; /* Reduced margin */
-}
-
-Input {
+/* --- Specific Widget Styling --- */
+.port-list Button {
+    width: 100%;
     margin-bottom: 1;
 }
 
-.buttons {
-    align: center middle;
-    width: 100%;
+Checkbox {
+    margin-top: 1;
+}
+
+Input {
+    margin-top: 1;
 }
 
 /* Status display styling */
 #bpm-display, #state-display, #sync-display {
     border: tall $background-lighten-2;
     background: $background-darken-2;
-    padding: 0 1; /* Reduced padding */
+    padding: 0 1;
     margin-bottom: 1;
-    height: 1; /* Reduced height */
+    height: 1;
     text-style: bold;
-    color: $success;
 }
 
 #state-display.stopped {
@@ -72,5 +109,5 @@ Input {
 
 #log {
     border: panel $primary-lighten-2;
-    height: 1fr; /* Take remaining vertical space */
+    height: 1fr;
 }
