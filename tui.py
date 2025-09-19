@@ -336,15 +336,15 @@ class SequencerTUI(App):
         def show_restore_button():
             panel.styles.display = "none"
             self.query_one(restore_button_selector).disabled = False
-        panel.animate("offset", value=Coordinate(0, -panel.outer_size.height), duration=0.5, easing="in_out_cubic", on_complete=show_restore_button)
-        panel.animate("opacity", value=0.0, duration=0.4)
+        panel.styles.animate("offset", value=(0, -panel.outer_size.height), duration=0.5, easing="in_out_cubic", on_complete=show_restore_button)
+        panel.styles.animate("opacity", value=0.0, duration=0.4)
 
     def restore_panel(self, panel_selector: str, restore_button_selector: str):
         self.query_one(restore_button_selector).disabled = True
         panel = self.query_one(panel_selector)
         panel.styles.display = "block"
-        panel.animate("offset", value=Coordinate(0, 0), duration=0.5, easing="in_out_cubic")
-        panel.animate("opacity", value=1.0, duration=0.4)
+        panel.styles.animate("offset", value=(0, 0), duration=0.5, easing="in_out_cubic")
+        panel.styles.animate("opacity", value=1.0, duration=0.4)
 
     def flash_button(self, button: Button, highlight_class: str):
         button.add_class(highlight_class)
